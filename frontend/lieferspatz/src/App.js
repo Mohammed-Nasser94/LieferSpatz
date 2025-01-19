@@ -1,5 +1,5 @@
 import "./App.css";
-import Home from "../src/Components/Home/Home";
+import Landing from "./Components/Landing/Landing";
 import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
 import { Routes, Route } from "react-router-dom";
@@ -10,14 +10,16 @@ import SignupRestaurant from "./Components/SignupRestaurant/SignupRestaurant";
 import SignupCustomer from "./Components/SignupCustomer/SignupCustomer";
 import LoginRestaurant from "./Components/LoginRestaurant/LoginRestaurant";
 import LoginCustomer from "./Components/LoginCustomer/LoginCustomer";
+import Home from "./Components/Home/Home";
 
 function App() {
   return (
     <>
       <Navbar />
       <Routes>
+        <Route path="landing" element={<Landing />} />
+        <Route path="" element={<Landing />} />
         <Route path="home" element={<Home />} />
-        <Route path="" element={<Home />} />
         <Route path="contactus" element={<Contactus />} />
         <Route path="signup" element={<Signup />} />
         <Route path="login" element={<Login />} />
