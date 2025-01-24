@@ -4,7 +4,23 @@ import { Link } from "react-router-dom";
 export default function Landing() {
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="d-flex flex-column">
+      <div className="d-flex flex-column align-items-center">
+        {/* Welcome message */}
+        <h1
+          className="mb-4"
+          style={{ fontSize: "2rem", fontWeight: "bold", color: "#343a40" }}
+        >
+          Welcome to Lieferspatz
+        </h1>
+
+        {/* Image placeholder */}
+        <img
+          src="/imgs/logo.png"
+          alt="Lieferspatz Logo"
+          style={{ width: "150px", height: "150px", marginBottom: "2rem" }}
+        />
+
+        {/* Login Button */}
         <Link
           className="btn btn-primary mb-3"
           to="/login"
@@ -22,6 +38,7 @@ export default function Landing() {
           Login
         </Link>
 
+        {/* Sign Up Button */}
         <Link
           to="/signup"
           className="btn btn-secondary"
