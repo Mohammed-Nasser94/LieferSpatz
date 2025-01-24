@@ -40,6 +40,7 @@ export default function SignupCustomer() {
       alert("An error occurred while registering. Please try again.");
     }
   };
+  console.log("Form Data Being Sent:", formData);
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100">

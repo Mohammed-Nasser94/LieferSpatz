@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from datetime import datetime
 from classes import Customer, Restaurant, MenuItem, Order
 from db import init_db, insert_data  # Import the functions from db.py
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 # Initialize the database and insert sample data when the app starts
 init_db()
@@ -16,6 +18,10 @@ orders = []
 menu_items = {}
 notifications = []
 lieferspatz_balance = 0  # Global balance for Lieferspatz
+
+@app.route('/')
+def home():
+    return "Welcome to Lieferspatz Backend API!"
 
 
 @app.route('/customer', methods=['POST'])
