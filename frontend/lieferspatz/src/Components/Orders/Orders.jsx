@@ -7,25 +7,37 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch(
-          `http://127.0.0.1:5000/customer/${customerId}/orders`
-        );
-        const data = await response.json();
+  // Function to fetch orders for the customer
+  const getOrders = async (customerId) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/customer/${customerId}/orders`
+      );
+      const data = await response.json();
 
-        if (response.ok) {
-          // Sort orders: Ongoing orders first, then completed/canceled, all sorted chronologically
-          const sortedOrders = data.sort((a, b) => {
-            if (a.status === "ongoing" && b.status !== "ongoing") return -1;
-            if (a.status !== "ongoing" && b.status === "ongoing") return 1;
-            return new Date(a.date) - new Date(b.date); // Sort by date chronologically
-          });
-          setOrders(sortedOrders);
-        } else {
-          throw new Error(data.message || "Failed to fetch orders");
-        }
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch orders");
+      }
+
+      // Sort orders: Ongoing orders first, then completed/canceled, sorted chronologically
+      const sortedOrders = data.sort((a, b) => {
+        if (a.status === "ongoing" && b.status !== "ongoing") return -1;
+        if (a.status !== "ongoing" && b.status === "ongoing") return 1;
+        return new Date(a.date) - new Date(b.date); // Sort by date chronologically
+      });
+
+      return sortedOrders;
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  };
+
+  // Effect to load orders when component mounts or customerId changes
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const fetchedOrders = await getOrders(customerId);
+        setOrders(fetchedOrders);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -33,7 +45,7 @@ export default function Orders() {
       }
     };
 
-    fetchOrders();
+    fetchData();
   }, [customerId]);
 
   if (loading) return <div>Loading orders...</div>;

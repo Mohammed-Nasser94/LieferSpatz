@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 
 const Order = () => {
   const location = useLocation();
 
-  // Read cart from state or default to an empty array
+  // Retrieve cart from state or default to an empty array
   const [cart, setCart] = useState(location.state?.selectedItems || []);
   const [instructions, setInstructions] = useState("");
 
@@ -50,7 +50,6 @@ const Order = () => {
 
       {cart.length > 0 ? (
         <>
-          {/* Cart Items */}
           <div className="list-group mb-4">
             {cart.map((item) => (
               <div
@@ -73,12 +72,10 @@ const Order = () => {
             ))}
           </div>
 
-          {/* Total Price */}
           <div className="mb-4">
             <h4>Total: ${calculateTotal().toFixed(2)}</h4>
           </div>
 
-          {/* Special Instructions */}
           <div className="mb-4">
             <label htmlFor="instructions" className="form-label">
               Special Instructions
@@ -93,7 +90,6 @@ const Order = () => {
             ></textarea>
           </div>
 
-          {/* Submit Button */}
           <button className="btn btn-primary w-100" onClick={handleSubmit}>
             Submit Order
           </button>
