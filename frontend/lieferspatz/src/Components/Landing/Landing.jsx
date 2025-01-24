@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 
 export default function Landing() {
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div
+      className="d-flex justify-content-center align-items-center vh-100"
+      style={{ backgroundColor: "white" }} // Set background to white
+    >
       <div className="d-flex flex-column align-items-center">
         {/* Welcome message */}
         <h1
