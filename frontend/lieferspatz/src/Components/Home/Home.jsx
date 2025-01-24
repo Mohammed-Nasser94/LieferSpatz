@@ -60,6 +60,24 @@ const Home = () => {
       rating: 4.4,
       logo: "https://via.placeholder.com/150",
     },
+    {
+      name: "Restaurant 10",
+      distance: "4.5 km",
+      rating: 4.6,
+      logo: "",
+    },
+    {
+      name: "Restaurant 11",
+      distance: "5 km",
+      rating: 4.1,
+      logo: "https://via.placeholder.com/150",
+    },
+    {
+      name: "Restaurant 12",
+      distance: "5.2 km",
+      rating: 4.0,
+      logo: "",
+    },
   ];
 
   const handleImageError = (e) => {
