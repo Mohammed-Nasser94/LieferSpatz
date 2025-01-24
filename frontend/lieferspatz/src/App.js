@@ -14,6 +14,7 @@ import Home from "./Components/Home/Home";
 import Restaurant from "./Components/Restaurant/Restaurant";
 import MenuWrapper from "./Components/MenuWrapper/MenuWrapper";
 import Orders from "./Components/Orders/Orders"; // Import the Orders component
+import Order from "./Components/Order/Order"; // Import the new Order component
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="customer/login" element={<LoginCustomer />} />
           <Route path="/restaurant/:restaurantId/menu" element={<MenuWrapper />} />
           <Route path="/customer/:customerId/orders" element={<Orders />} /> 
+          <Route path="/order" element={<Order />} /> 
         </Routes>
       </div>
     </>
