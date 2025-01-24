@@ -12,6 +12,8 @@ import LoginRestaurant from "./Components/LoginRestaurant/LoginRestaurant";
 import LoginCustomer from "./Components/LoginCustomer/LoginCustomer";
 import Home from "./Components/Home/Home";
 import Restaurant from "./Components/Restaurant/Restaurant";
+import MenuWrapper from "./Components/MenuWrapper/MenuWrapper";
+import Orders from "./Components/Orders/Orders"; // Import the Orders component
 
 function App() {
   return (
@@ -22,18 +24,20 @@ function App() {
           <Route path="landing" element={<Landing />} />
           <Route path="" element={<Landing />} />
           <Route path="home" element={<Home />} />
-          <Route path="restaurant/:id" element={<Restaurant />} />{" "}
-          {/* Updated */}
+          <Route path="restaurant/:id" element={<Restaurant />} />
           <Route path="contactus" element={<Contactus />} />
           <Route path="signup" element={<Signup />} />
           <Route path="login" element={<Login />} />
-          <Route path="signupowner" element={<SignupRestaurant />} />
-          <Route path="signupcustomer" element={<SignupCustomer />} />
+          <Route path="restaurant" element={<SignupRestaurant />} />
+          <Route path="customer" element={<SignupCustomer />} />
           <Route path="loginrestaurant" element={<LoginRestaurant />} />
-          <Route path="logincustomer" element={<LoginCustomer />} />
+          <Route path="customer/login" element={<LoginCustomer />} />
+          <Route path="/restaurant/:restaurantId/menu" element={<MenuWrapper />} />
+          <Route path="/customer/:customerId/orders" element={<Orders />} /> 
         </Routes>
       </div>
     </>
   );
 }
+
 export default App;

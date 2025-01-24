@@ -2,8 +2,10 @@ import React, { useState } from "react";
 
 export default function SignupCustomer() {
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
+    first_name: "",
+    last_name: "",
+    address: "",
+    zip_code: "",
     password: "",
   });
 
@@ -18,26 +20,20 @@ export default function SignupCustomer() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const dataToSend = {
-      username: formData.username, // Assuming fullName maps to "username"
-      email: formData.email,
-      password: formData.password,
-    };
-
     try {
-      const response = await fetch("/register", {
+      const response = await fetch("http://localhost:5000/customer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(dataToSend),
+        body: JSON.stringify(formData),
       });
 
       const result = await response.json();
       if (response.ok) {
-        alert("User registered successfully!");
+        alert("Customer registered successfully!");
       } else {
-        alert(`Error: ${result.message}`);
+        alert(`Error: ${result.error}`);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -50,32 +46,62 @@ export default function SignupCustomer() {
       <div className="card p-4 shadow" style={{ width: "400px" }}>
         <h2 className="text-center mb-4">Customer Sign Up</h2>
         <form onSubmit={handleSubmit}>
-          {/* User Name */}
+          {/* First Name */}
           <div className="mb-3">
-            <label htmlFor="username" className="form-label">
-              User Name
+            <label htmlFor="first_name" className="form-label">
+              First Name
             </label>
             <input
               type="text"
               className="form-control"
-              id="username" // Matches formData key
-              placeholder="Enter your full name"
-              value={formData.username}
+              id="first_name"
+              placeholder="Enter your first name"
+              value={formData.first_name}
               onChange={handleChange}
             />
           </div>
 
-          {/* Email */}
+          {/* Last Name */}
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email Address
+            <label htmlFor="last_name" className="form-label">
+              Last Name
             </label>
             <input
-              type="email"
+              type="text"
               className="form-control"
-              id="email"
-              placeholder="Enter your email"
-              value={formData.email}
+              id="last_name"
+              placeholder="Enter your last name"
+              value={formData.last_name}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Address */}
+          <div className="mb-3">
+            <label htmlFor="address" className="form-label">
+              Address
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="address"
+              placeholder="Enter your address"
+              value={formData.address}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Zip Code */}
+          <div className="mb-3">
+            <label htmlFor="zip_code" className="form-label">
+              Zip Code
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="zip_code"
+              placeholder="Enter your zip code"
+              value={formData.zip_code}
               onChange={handleChange}
             />
           </div>

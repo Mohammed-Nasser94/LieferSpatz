@@ -71,6 +71,19 @@ export default function SignupRestaurant() {
             />
           </div>
 
+          {/* Restaurant Logo (Optional) */}
+          <div className="mb-3">
+            <label htmlFor="restaurantLogo" className="form-label">
+              Restaurant Logo (Optional)
+            </label>
+            <input
+              type="file"
+              className="form-control"
+              id="restaurantLogo"
+              accept="image/*"
+            />
+          </div>
+
           {/* Submit Button */}
           <button type="submit" className="btn btn-primary w-100">
             Sign Up

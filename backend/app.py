@@ -1,182 +1,265 @@
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
-from flask_cors import CORS
-
+from datetime import datetime
+from classes import Customer, Restaurant, MenuItem, Order
+from db import init_db, insert_data  # Import the functions from db.py
 
 app = Flask(__name__)
 
-# Enable CORS
-CORS(app)
+# Initialize the database and insert sample data when the app starts
+init_db()
+# insert_data()
+
+# In-memory storage (replace with real DB in production)
+restaurants = {}
+customers = {}
+orders = []
+menu_items = {}
+notifications = []
+lieferspatz_balance = 0  # Global balance for Lieferspatz
 
 
-# Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lieferspatz.db'  # Database configuration
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking for performance
-app.config['JWT_SECRET_KEY'] = 'f0c19b2d5a823wdw433bce3ad8958e'  # Secret key for signing JWT tokens
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)  # Token expiration time
+@app.route('/customer', methods=['POST'])
+def create_customer():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid or missing JSON payload'}), 400
 
-db = SQLAlchemy(app)  # Initialize SQLAlchemy for ORM
-jwt = JWTManager(app)  # Initialize JWT Manager
+        # Validate required fields
+        required_fields = ['first_name', 'last_name', 'address', 'zip_code', 'password']
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
 
-# Models
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  # Unique ID for each user
-    username = db.Column(db.String(80), unique=True, nullable=False)  # Username, must be unique
-    password = db.Column(db.String(120), nullable=False)  # Hashed password
-    email = db.Column(db.String(120), unique=True, nullable=False)  # Email, must be unique
+        # Extract data
+        first_name = data['first_name']
+        last_name = data['last_name']
+        address = data['address']
+        zip_code = data['zip_code']
+        password = data['password']
 
-class Restaurant(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  # Unique ID for each restaurant
-    name = db.Column(db.String(120), nullable=False)  # Name of the restaurant
-    address = db.Column(db.String(200), nullable=False)  # Address of the restaurant
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Owner of the restaurant
+        # Generate the customer ID dynamically
+        customer_id = len(customers) + 1
 
-class MenuItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  # Unique ID for each menu item
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)  # Related restaurant
-    name = db.Column(db.String(120), nullable=False)  # Name of the menu item
-    price = db.Column(db.Float, nullable=False)  # Price of the item
-    description = db.Column(db.String(200))  # Description of the item
-    photo_url = db.Column(db.String(200))  # URL for item photo
+        # Create and store new customer
+        customer = Customer(customer_id, first_name, last_name, address, zip_code, password)
+        customers[customer_id] = customer
 
-class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)  # Unique ID for each order
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # User who placed the order
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)  # Related restaurant
-    total_price = db.Column(db.Float, nullable=False)  # Total price of the order
-    order_date = db.Column(db.DateTime, default=datetime.utcnow)  # Date of the order
-    status = db.Column(db.String(50), default='Pending')  # Status of the order (e.g., Pending, Delivered)
+        return jsonify({'success': True, 'customer_id': customer.id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-# Initialize the database
-with app.app_context():
-    db.create_all()  # Create all tables if not exist
 
-# Routes
-@app.route('/register', methods=['POST'])
-def register():
-    """Handles user registration by creating a new user and returning a JWT token."""
-    data = request.get_json()
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'message': 'Username already exists'}), 400
 
-    hashed_password = generate_password_hash(data['password'], method='sha256')
-    user = User(username=data['username'], password=hashed_password, email=data['email'])
-    db.session.add(user)
-    db.session.commit()
+# Customer Login (authenticate)
+@app.route('/customer/login', methods=['POST'])
+def login_customer():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid or missing JSON payload'}), 400
 
-    access_token = create_access_token(identity=user.id)
-    return jsonify({'message': 'User registered successfully!', 'access_token': access_token}), 201
+        # Extract credentials
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        password = data.get('password')
 
-@app.route('/login', methods=['POST'])
-def login():
-    """Handles user login by validating credentials and returning a JWT token."""
-    data = request.get_json()
-    user = User.query.filter_by(username=data['username']).first()
-    if user and check_password_hash(user.password, data['password']):
-        access_token = create_access_token(identity=user.id)
-        return jsonify({'message': 'Login successful!', 'access_token': access_token}), 200
-    return jsonify({'message': 'Invalid username or password!'}), 401
+        # Validate credentials
+        for customer in customers.values():
+            if (
+                customer.first_name == first_name
+                and customer.last_name == last_name
+                and customer.password == password
+            ):
+                return jsonify({'success': True, 'customer_id': customer.id})
 
-@app.route('/restaurants', methods=['POST'])
-@jwt_required()
-def add_restaurant():
-    """Allows an authenticated user to create a new restaurant and associates it with the user."""
-    current_user = get_jwt_identity()
-    data = request.get_json()
-    restaurant = Restaurant(name=data['name'], address=data['address'], owner_id=current_user)
-    db.session.add(restaurant)
-    db.session.commit()
-    return jsonify({'message': 'Restaurant added successfully!'}), 201
+        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/restaurants', methods=['GET'])
-@jwt_required()
-def get_restaurants():
-    """Retrieves all restaurants. Accessible to authenticated users."""
-    current_user = get_jwt_identity()
-    restaurants = Restaurant.query.all()
-    result = [{'id': r.id, 'name': r.name, 'address': r.address} for r in restaurants]
-    return jsonify(result)
 
-@app.route('/restaurants/<int:restaurant_id>/menu', methods=['POST'])
-@jwt_required()
+# Create a new restaurant account
+@app.route('/restaurant', methods=['POST'])
+def create_restaurant():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid or missing JSON payload'}), 400
+
+        # Extract restaurant data
+        name = data.get('name')
+        address = data.get('address')
+        description = data.get('description')
+        password = data.get('password')
+
+        if not all([name, address, description, password]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Create new restaurant
+        restaurant_id = len(restaurants) + 1
+        restaurant = Restaurant(name, address, description, password)
+        restaurant.id = restaurant_id
+        restaurants[restaurant_id] = restaurant
+
+        return jsonify({'success': True, 'restaurant_id': restaurant.id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Add an item to the restaurant's menu
+@app.route('/restaurant/<int:restaurant_id>/menu', methods=['POST'])
 def add_menu_item(restaurant_id):
-    """Allows an authenticated user to add a menu item to a specific restaurant."""
-    current_user = get_jwt_identity()
-    data = request.form
-    photo = request.files['photo']
-    photo_url = f"/path/to/save/photo/{photo.filename}"  # Save the photo and get the URL
-    menu_item = MenuItem(
-        restaurant_id=restaurant_id,
-        name=data['name'],
-        price=data['price'],
-        description=data.get('description', ''),
-        photo_url=photo_url
-    )
-    db.session.add(menu_item)
-    db.session.commit()
-    return jsonify({'message': 'Menu item added successfully!'}), 201
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid or missing JSON payload'}), 400
 
-@app.route('/restaurants/<int:restaurant_id>/menu', methods=['GET'])
-@jwt_required()
-def get_menu(restaurant_id):
-    """Retrieves all menu items for a specific restaurant."""
-    current_user = get_jwt_identity()
-    menu_items = MenuItem.query.filter_by(restaurant_id=restaurant_id).all()
-    result = [{'id': item.id, 'name': item.name, 'price': item.price} for item in menu_items]
-    return jsonify(result)
+        # Extract menu item data
+        name = data.get('name')
+        description = data.get('description')
+        price = data.get('price')
+        image = data.get('image', None)
 
-@app.route('/orders', methods=['POST'])
-@jwt_required()
+        if not all([name, description, price]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Find the restaurant
+        restaurant = restaurants.get(restaurant_id)
+        if not restaurant:
+            return jsonify({'success': False, 'message': 'Restaurant not found'}), 404
+
+        # Create menu item
+        menu_item = MenuItem(name, description, price, image)
+        restaurant.menu.append(menu_item)
+        menu_items[menu_item.id] = menu_item
+
+        return jsonify({'success': True, 'item_id': menu_item.id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Create a new order (from a customer)
+@app.route('/order', methods=['POST'])
 def create_order():
-    """Allows an authenticated user to create a new order."""
-    current_user = get_jwt_identity()
-    data = request.get_json()
-    order = Order(user_id=current_user, restaurant_id=data['restaurant_id'], total_price=data['total_price'])
-    db.session.add(order)
-    db.session.commit()
-    return jsonify({'message': 'Order created successfully!'}), 201
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid or missing JSON payload'}), 400
 
-@app.route('/orders/<int:order_id>', methods=['GET'])
-@jwt_required()
-def get_order(order_id):
-    """Retrieves details of a specific order. Accessible only to the user who placed the order."""
-    current_user = get_jwt_identity()
-    order = Order.query.get(order_id)
-    if not order or order.user_id != current_user:
-        return jsonify({'message': 'Order not found!'}), 404
-    return jsonify({
-        'id': order.id,
-        'user_id': order.user_id,
-        'restaurant_id': order.restaurant_id,
-        'total_price': order.total_price,
-        'order_date': order.order_date,
-        'status': order.status
-    })
+        # Extract order data
+        customer_id = data.get('customer_id')
+        restaurant_id = data.get('restaurant_id')
+        items = data.get('items')
 
-@app.route('/orders/<int:order_id>/status', methods=['PUT'])
-@jwt_required()
-def update_order_status(order_id):
-    """Allows the restaurant owner to update the status of an order. 
-    Includes a permission check to ensure only authorized users can perform this action."""
-    current_user = get_jwt_identity()
-    data = request.get_json()
+        customer = customers.get(customer_id)
+        restaurant = restaurants.get(restaurant_id)
 
-    # Get the order and restaurant details
-    order = Order.query.get(order_id)
-    if not order:
-        return jsonify({'message': 'Order not found!'}), 404
+        if not customer:
+            return jsonify({'success': False, 'message': 'Customer not found'}), 404
+        if not restaurant:
+            return jsonify({'success': False, 'message': 'Restaurant not found'}), 404
 
-    restaurant = Restaurant.query.get(order.restaurant_id)
-    if not restaurant or restaurant.owner_id != current_user:
-        return jsonify({'message': 'You do not have permission to update this order!'}), 403
+        # Create the order with status 'in Bearbeitung'
+        order = Order(customer_id, restaurant_id, items)
+        customer.orders.append(order)
+        restaurant.orders.append(order)
+        orders.append(order)
 
-    # Update the order status
-    order.status = data['status']
-    db.session.commit()
-    return jsonify({'message': 'Order status updated successfully!'}), 200
+        # Process the payment for the order
+        if not order.process_payment():
+            return jsonify({'success': False, 'message': 'Insufficient balance to complete the payment.'}), 400
+
+        return jsonify({'success': True, 'order_id': len(orders)}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# View a customer's order history
+@app.route('/customer/<int:customer_id>/orders', methods=['GET'])
+def view_order_history(customer_id):
+    try:
+        customer = customers.get(customer_id)
+
+        if not customer:
+            return jsonify({'success': False, 'message': 'Customer not found'}), 404
+
+        # Sort orders by status (pending first)
+        sorted_orders = sorted(
+            customer.orders, key=lambda x: (x.status != 'in Bearbeitung', x.timestamp)
+        )
+
+        order_details = []
+        for i, order in enumerate(sorted_orders, start=1):  # Fix for 1-based indexing
+            order_details.append({
+                'order_id': i,
+                'restaurant_name': restaurants[order.restaurant_id].name,
+                'items': order.items,
+                'total_price': order.total_price(),
+                'status': order.status,
+                'timestamp': order.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        return jsonify({'orders': order_details})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Get the status of a specific order (customer's view)
+@app.route('/customer/<int:customer_id>/order/<int:order_id>', methods=['GET'])
+def get_order_status(customer_id, order_id):
+    try:
+        customer = customers.get(customer_id)
+
+        if not customer:
+            return jsonify({'success': False, 'message': 'Customer not found'}), 404
+
+        if order_id > len(customer.orders) or order_id <= 0:
+            return jsonify({'success': False, 'message': 'Order not found'}), 404
+
+        order = customer.orders[order_id - 1]  # 1-based order ID
+
+        return jsonify({
+            'order_id': order_id,
+            'status': order.status,
+            'restaurant_name': restaurants[order.restaurant_id].name,
+            'items': order.items,
+            'total_price': order.total_price(),
+            'timestamp': order.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Get customer's wallet balance
+@app.route('/customer/<int:customer_id>/wallet', methods=['GET'])
+def get_wallet_balance(customer_id):
+    try:
+        customer = customers.get(customer_id)
+        if not customer:
+            return jsonify({'success': False, 'message': 'Customer not found'}), 404
+
+        return jsonify({'wallet_balance': customer.wallet_balance})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Get restaurant's wallet balance
+@app.route('/restaurant/<int:restaurant_id>/wallet', methods=['GET'])
+def get_restaurant_wallet_balance(restaurant_id):
+    try:
+        restaurant = restaurants.get(restaurant_id)
+        if not restaurant:
+            return jsonify({'success': False, 'message': 'Restaurant not found'}), 404
+
+        return jsonify({'wallet_balance': restaurant.wallet_balance})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Get global Lieferspatz wallet balance
+@app.route('/lieferspatz/wallet', methods=['GET'])
+def get_lieferspatz_wallet_balance():
+    return jsonify({'lieferspatz_wallet_balance': lieferspatz_balance})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

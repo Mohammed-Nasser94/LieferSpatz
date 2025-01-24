@@ -8,7 +8,7 @@ export default function Login() {
         <h2 className="mb-4">Login</h2>
         <div className="d-grid gap-3">
           {/* Link for Customer Login */}
-          <Link to="/logincustomer" className="btn btn-primary btn-lg">
+          <Link to="/customer/login" className="btn btn-primary btn-lg">
             Login as Customer
           </Link>
 
