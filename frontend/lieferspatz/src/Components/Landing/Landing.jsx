@@ -5,9 +5,50 @@ export default function Landing() {
   return (
     <div
       className="d-flex justify-content-center align-items-center vh-100"
-      style={{ backgroundColor: "white" }} // Set background to white
+      style={{
+        backgroundColor: "white",
+        position: "relative",
+        overflow: "hidden",
+      }}
     >
-      <div className="d-flex flex-column align-items-center">
+      <div
+        className="d-flex flex-column align-items-center"
+        style={{ position: "relative", zIndex: 1 }}
+      >
+        {/* Logo with Larger Width, Full Coverage, and Hover Effect */}
+        <div
+          style={{
+            width: "300px", // Increased width for full visibility
+            height: "300px", // Matching height for square
+            overflow: "hidden",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: "20px",
+            borderRadius: "16px", // Slightly rounded corners
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Subtle shadow
+            transition: "transform 0.3s ease, box-shadow 0.3s ease", // Smooth hover animation
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)"; // Zoom in slightly
+            e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.3)"; // Enhance shadow
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)"; // Reset zoom
+            e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)"; // Reset shadow
+          }}
+        >
+          <img
+            src="/imgs/logo.jpeg"
+            alt="Logo"
+            style={{
+              width: "100%", // Full width of the container
+              height: "100%", // Full height of the container
+              objectFit: "contain", // Ensure full image is visible
+            }}
+          />
+        </div>
+
         {/* Welcome message */}
         <h1
           className="mb-4"
@@ -15,13 +56,6 @@ export default function Landing() {
         >
           Welcome to Lieferspatz
         </h1>
-
-        {/* Image placeholder */}
-        <img
-          src="/imgs/logo.png"
-          alt="Lieferspatz Logo"
-          style={{ width: "150px", height: "150px", marginBottom: "2rem" }}
-        />
 
         {/* Login Button */}
         <Link

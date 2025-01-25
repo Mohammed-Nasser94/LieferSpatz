@@ -19,7 +19,7 @@ import Order from "./Components/Order/Order"; // Import the new Order component
 function App() {
   return (
     <>
-      <div className="container">
+
         <Navbar />
         <Routes>
           <Route path="landing" element={<Landing />} />
@@ -37,7 +37,7 @@ function App() {
           <Route path="/customer/:customerId/orders" element={<Orders />} /> 
           <Route path="/order" element={<Order />} /> 
         </Routes>
-      </div>
+
     </>
   );
 }
